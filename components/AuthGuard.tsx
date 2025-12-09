@@ -7,6 +7,18 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper to check for main site cookie
+  const getCookie = (name: string) => {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -14,6 +26,17 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     });
     return () => unsubscribe();
   }, []);
+
+  const hasCookie = !!getCookie('rm_auth_token');
+
+  useEffect(() => {
+    if (!loading) {
+      if (!hasCookie) {
+        // Redirect to main site if no cookie found (Not authenticated on CompanyRm)
+        window.location.href = "https://www.companyrm.lk";
+      }
+    }
+  }, [loading, hasCookie]);
 
   if (loading) {
     return (
@@ -26,32 +49,17 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  // If no cookie, we are redirecting, render nothing or spinner
+  if (!hasCookie) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 p-6">
-        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full text-center border border-slate-200">
-          <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-            <GraduationCap size={32} className="text-red-500" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">Authentication Required</h1>
-          <p className="text-slate-500 mb-8">
-            You need to be logged in to CompanyRm to access the Student AI Assistant.
-          </p>
-
-          <a
-            href="/" // Assuming main app is at root or user knows where to login
-            onClick={(e) => {
-              // If running standalone, we might need a real login flow?
-              // For now, let's keep it simple as part of the suite.
-            }}
-            className="block w-full py-3 px-4 bg-slate-800 text-white rounded-xl font-medium hover:bg-slate-900 transition-colors"
-          >
-            Return to Dashboard
-          </a>
-        </div>
+      <div className="h-screen flex items-center justify-center bg-slate-50 text-slate-400">
+        Redirecting to login...
       </div>
     );
   }
 
+  // Valid Cookie Exists -> Allow Access!
+  // Note: Firebase 'user' might be null here if cross-domain session didn't sync.
+  // The App handles null user by disabling History features gracefully.
   return <>{children}</>;
 };
