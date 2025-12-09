@@ -3,12 +3,14 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Citation, SearchResult, Language } from "../types";
 
 // Initialize Gemini Client
-// Using Vite env var (standard) or process.env (legacy/fallback)
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (process.env.API_KEY as string);
+// Using Vite env var (standard) or process.env (legacy/fallback - handled safely)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY ||
+  (typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined);
+
 if (!apiKey) {
-  console.error("Gemini API Key is missing! Please set VITE_GEMINI_API_KEY in .env file.");
+  console.error("Gemini API Key is missing! Please set VITE_GEMINI_API_KEY in Vercel Environment Variables.");
 }
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: apiKey || "dummy-key-to-prevent-crash" });
 
 const SYSTEM_INSTRUCTION_EN = `You are a highly capable academic research assistant designed to help students and researchers. 
 Your goal is to provide comprehensive, accurate, and well-structured answers to research questions. 
