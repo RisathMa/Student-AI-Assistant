@@ -1,9 +1,14 @@
+/// <reference types="vite/client" />
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Citation, SearchResult, Language } from "../types";
 
 // Initialize Gemini Client
-// CRITICAL: Using process.env.API_KEY as per instructions
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Using Vite env var (standard) or process.env (legacy/fallback)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (process.env.API_KEY as string);
+if (!apiKey) {
+  console.error("Gemini API Key is missing! Please set VITE_GEMINI_API_KEY in .env file.");
+}
+const ai = new GoogleGenAI({ apiKey });
 
 const SYSTEM_INSTRUCTION_EN = `You are a highly capable academic research assistant designed to help students and researchers. 
 Your goal is to provide comprehensive, accurate, and well-structured answers to research questions. 
@@ -19,12 +24,12 @@ const SYSTEM_INSTRUCTION_SI = `ඔබ සිසුන්ට සහ පර්ය�
 කරුණාකර ඔබේ පිළිතුර සිංහල භාෂාවෙන් ලබා දෙන්න.`;
 
 export const performResearch = async (
-  query: string, 
+  query: string,
   language: Language
 ): Promise<SearchResult> => {
   try {
     const modelId = 'gemini-2.5-flash'; // Using Flash for speed with search grounding
-    
+
     const systemInstruction = language === 'si' ? SYSTEM_INSTRUCTION_SI : SYSTEM_INSTRUCTION_EN;
 
     const response: GenerateContentResponse = await ai.models.generateContent({
@@ -38,11 +43,11 @@ export const performResearch = async (
     });
 
     const text = response.text || "No response generated.";
-    
+
     // Extract Grounding Metadata (Citations)
     // The SDK returns grounding chunks in candidates[0].groundingMetadata.groundingChunks
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    
+
     const sources: Citation[] = [];
 
     groundingChunks.forEach((chunk, index) => {
