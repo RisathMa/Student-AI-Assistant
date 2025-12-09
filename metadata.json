@@ -1,0 +1,5 @@
+{
+  "name": "ScholarMind - AI Research Assistant",
+  "description": "An academic AI companion for faster research and organized citations. Features Google Search grounding with Gemini and full Sinhala language support.",
+  "requestFramePermissions": []
+}
